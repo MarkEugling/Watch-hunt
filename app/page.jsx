@@ -136,7 +136,7 @@ export default function Home() {
             <div className="bg-surface rounded-xl p-4 border border-white/5 group relative cursor-default">
               <div className="text-2xl font-bold text-white">8</div>
               <div className="text-xs text-white/40 mt-0.5 uppercase tracking-wider">Markets monitored</div>
-              <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 bg-surface-2 border border-white/10 rounded-xl p-3 z-10 w-40 shadow-xl">
+              <div className="absolute top-full left-0 mt-2 hidden group-hover:flex flex-col gap-1 bg-surface-2 border border-white/10 rounded-xl p-3 z-10 w-40 shadow-xl">
                 {["Sotheby's","Christie's","Phillips","Antiquorum","Chrono24","WatchCharts","WatchPatrol","eBay"].map(m => (
                   <span key={m} className="text-xs text-white/60">{m}</span>
                 ))}

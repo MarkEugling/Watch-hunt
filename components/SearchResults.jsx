@@ -1,0 +1,155 @@
+'use client'
+import { useState } from 'react'
+import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag } from 'lucide-react'
+
+const SOURCE_COLORS = {
+  "Sotheby's": 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+  "Christie's": 'bg-purple-500/10 text-purple-300 border-purple-500/20',
+  'Phillips': 'bg-red-500/10 text-red-300 border-red-500/20',
+  'Antiquorum': 'bg-orange-500/10 text-orange-300 border-orange-500/20',
+  'Chrono24': 'bg-teal-500/10 text-teal-300 border-teal-500/20',
+  'WatchCharts': 'bg-green-500/10 text-green-300 border-green-500/20',
+  'WatchPatrol': 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
+  'eBay': 'bg-pink-500/10 text-pink-300 border-pink-500/20',
+}
+
+function ResultItem({ result }) {
+  return (
+    <a
+      href={result.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-start gap-3 p-3 rounded-xl bg-surface-3 hover:bg-surface-2 border border-white/5 hover:border-gold/20 transition-all group"
+    >
+      {/* Source badge */}
+      <div className="flex-shrink-0 mt-0.5">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${SOURCE_COLORS[result.source] || 'bg-white/5 text-white/50 border-white/10'}`}>
+          {result.sourceType === 'auction' ? <Gavel size={10} className="mr-1" /> : <ShoppingBag size={10} className="mr-1" />}
+          {result.source}
+        </span>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-white/90 font-medium leading-tight truncate group-hover:text-white">
+          {result.title}
+        </p>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-xs font-semibold text-gold">
+            {result.priceDisplay}
+          </span>
+          {result.saleName && (
+            <span className="text-xs text-white/30">{result.saleName}</span>
+          )}
+          {result.saleDate && (
+            <span className="text-xs text-white/30">
+              {new Date(result.saleDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <ExternalLink size={14} className="flex-shrink-0 text-white/20 group-hover:text-gold/60 transition-colors mt-1" />
+    </a>
+  )
+}
+
+export default function SearchResults({ results, sourceStatus, searchedAt, maxPrice }) {
+  const [tab, setTab] = useState('all')
+  const [showAll, setShowAll] = useState(false)
+
+  const TABS = [
+    { id: 'all', label: 'All' },
+    { id: 'auction', label: 'Auctions' },
+    { id: 'grey', label: 'Grey Market' },
+  ]
+
+  const filtered = results.filter(r => {
+    if (tab === 'auction') return r.sourceType === 'auction'
+    if (tab === 'grey') return r.sourceType === 'grey'
+    return true
+  })
+
+  const priceMatches = filtered.filter(r => r.price && r.price <= maxPrice)
+  const linkResults = filtered.filter(r => r.isLink)
+  const displayed = showAll ? filtered : filtered.slice(0, 8)
+
+  return (
+    <div className="mt-4 animate-fade-in">
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                tab === t.id
+                  ? 'bg-gold/20 text-gold border border-gold/30'
+                  : 'text-white/40 hover:text-white/70 border border-transparent'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {searchedAt && (
+          <span className="text-xs text-white/25">
+            Searched {new Date(searchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
+
+      {/* Summary pill */}
+      {priceMatches.length > 0 && (
+        <div className="mb-3 px-3 py-2 rounded-lg bg-success/10 border border-success/20 text-xs text-success">
+          ✓ {priceMatches.length} listing{priceMatches.length !== 1 ? 's' : ''} found at or below your max price
+        </div>
+      )}
+
+      {/* Source status */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {Object.entries(sourceStatus || {}).map(([name, status]) => (
+          <span
+            key={name}
+            title={status.error ? `Error: ${status.error}` : `${status.count} results in ${status.ms}ms`}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${
+              status.error
+                ? 'bg-danger/10 text-danger/60 border-danger/20'
+                : status.count > 0
+                  ? 'bg-success/10 text-success border-success/20'
+                  : 'bg-white/5 text-white/25 border-white/10'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              status.error ? 'bg-danger' : status.count > 0 ? 'bg-success' : 'bg-white/20'
+            }`} />
+            {name}
+            {status.count > 0 && <span className="opacity-60">({status.count})</span>}
+          </span>
+        ))}
+      </div>
+
+      {/* Results list */}
+      {displayed.length === 0 ? (
+        <div className="text-center py-8 text-white/25 text-sm">
+          No results found at this price point
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {displayed.map((result, i) => (
+            <ResultItem key={i} result={result} />
+          ))}
+        </div>
+      )}
+
+      {filtered.length > 8 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 text-xs text-white/40 hover:text-white/70 transition-colors"
+        >
+          {showAll ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Show all {filtered.length} results</>}
+        </button>
+      )}
+    </div>
+  )
+}

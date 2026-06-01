@@ -3,7 +3,7 @@ import { readWatches, addWatch, deleteWatch } from '../../../lib/storage.js'
 
 export async function GET() {
   try {
-    const watches = readWatches()
+    const watches = await readWatches()
     return NextResponse.json(watches)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
@@ -22,7 +22,7 @@ export async function POST(request) {
       )
     }
 
-    const watch = addWatch({
+    const watch = await addWatch({
       brand: brand.trim(),
       model: model.trim(),
       reference: reference?.trim() || '',
@@ -43,7 +43,7 @@ export async function DELETE(request) {
     if (!id) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 })
     }
-    const watches = deleteWatch(id)
+    const watches = await deleteWatch(id)
     return NextResponse.json(watches)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })

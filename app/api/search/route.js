@@ -9,12 +9,12 @@ export async function POST(request) {
 
     if (all) {
       // Search all watches
-      const watches = readWatches()
+      const watches = await readWatches()
       const results = await Promise.all(
         watches.map(async (watch) => {
           const query = [watch.brand, watch.model, watch.reference].filter(Boolean).join(' ')
           const searchResult = await runAllSearches({ query, maxPrice: watch.maxPrice })
-          updateWatch(watch.id, {
+          await updateWatch(watch.id, {
             lastSearched: searchResult.searchedAt,
             results: searchResult.results,
             sourceStatus: searchResult.sourceStatus,
@@ -26,7 +26,7 @@ export async function POST(request) {
     }
 
     // Search a single watch
-    const watches = readWatches()
+    const watches = await readWatches()
     const watch = watches.find(w => w.id === id)
     if (!watch) {
       return NextResponse.json({ error: 'Watch not found' }, { status: 404 })
@@ -35,8 +35,7 @@ export async function POST(request) {
     const query = [watch.brand, watch.model, watch.reference].filter(Boolean).join(' ')
     const searchResult = await runAllSearches({ query, maxPrice: watch.maxPrice })
 
-    // Save results to disk
-    updateWatch(watch.id, {
+    await updateWatch(watch.id, {
       lastSearched: searchResult.searchedAt,
       results: searchResult.results,
       sourceStatus: searchResult.sourceStatus,

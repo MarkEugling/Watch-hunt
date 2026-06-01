@@ -140,6 +140,17 @@ export default function Home() {
           </div>
         )}
 
+        {/* Brands summary */}
+        {watches.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {[...new Set(watches.map(w => w.brand))].sort().map(brand => (
+              <span key={brand} className="px-3 py-1 rounded-full bg-surface border border-white/10 text-xs text-white/50">
+                {brand}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Watchlist */}
         {loading ? (
           <div className="flex items-center justify-center py-24 text-white/20">

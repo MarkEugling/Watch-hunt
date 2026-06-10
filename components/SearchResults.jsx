@@ -89,7 +89,7 @@ function ResultItem({ result }) {
           {result.title}
         </p>
         <div className="flex items-center gap-3 mt-1">
-          <span className="text-xs font-semibold text-gold">
+          <span className={result.isLink ? 'text-xs text-white/40' : 'text-xs font-semibold text-gold'}>
             {result.priceDisplay}
           </span>
           {result.saleName && (

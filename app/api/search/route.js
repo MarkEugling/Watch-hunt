@@ -13,7 +13,13 @@ export async function POST(request) {
       const results = await Promise.all(
         watches.map(async (watch) => {
           const query = [watch.brand, watch.model, watch.reference].filter(Boolean).join(' ')
-          const searchResult = await runAllSearches({ query, maxPrice: watch.maxPrice })
+          const searchResult = await runAllSearches({
+            query,
+            brand: watch.brand,
+            model: watch.model,
+            reference: watch.reference,
+            maxPrice: watch.maxPrice,
+          })
           await updateWatch(watch.id, {
             lastSearched: searchResult.searchedAt,
             results: searchResult.results,
@@ -33,7 +39,13 @@ export async function POST(request) {
     }
 
     const query = [watch.brand, watch.model, watch.reference].filter(Boolean).join(' ')
-    const searchResult = await runAllSearches({ query, maxPrice: watch.maxPrice })
+    const searchResult = await runAllSearches({
+      query,
+      brand: watch.brand,
+      model: watch.model,
+      reference: watch.reference,
+      maxPrice: watch.maxPrice,
+    })
 
     await updateWatch(watch.id, {
       lastSearched: searchResult.searchedAt,

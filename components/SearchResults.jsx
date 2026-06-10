@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star, TrendingDown, TrendingUp, SearchCheck } from 'lucide-react'
+import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, Store, ShieldCheck, ShieldAlert, Star, TrendingDown, TrendingUp, SearchCheck } from 'lucide-react'
 import { computeTrust } from '../lib/trust'
 
 const SOURCE_COLORS = {
@@ -12,6 +12,7 @@ const SOURCE_COLORS = {
   'WatchCharts': 'bg-green-500/10 text-green-300 border-green-500/20',
   'WatchPatrol': 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
   'eBay': 'bg-pink-500/10 text-pink-300 border-pink-500/20',
+  'NYC Diamond District': 'bg-amber-500/10 text-amber-300 border-amber-500/20',
 }
 
 const TRUST_CHIP = {
@@ -110,7 +111,7 @@ function ResultItem({ result, maxPrice }) {
           />
         )}
         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${SOURCE_COLORS[result.source] || 'bg-white/5 text-white/50 border-white/10'}`}>
-          {result.sourceType === 'auction' ? <Gavel size={10} className="mr-1" /> : <ShoppingBag size={10} className="mr-1" />}
+          {result.sourceType === 'auction' ? <Gavel size={10} className="mr-1" /> : result.sourceType === 'dealer' ? <Store size={10} className="mr-1" /> : <ShoppingBag size={10} className="mr-1" />}
           {result.source}
         </span>
       </div>
@@ -161,11 +162,13 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
     { id: 'all', label: 'All' },
     { id: 'auction', label: 'Auctions' },
     { id: 'grey', label: 'Grey Market' },
+    { id: 'dealer', label: 'Dealers' },
   ]
 
   const filtered = results.filter(r => {
     if (tab === 'auction') return r.sourceType === 'auction'
     if (tab === 'grey') return r.sourceType === 'grey'
+    if (tab === 'dealer') return r.sourceType === 'dealer'
     return true
   })
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { readWatches, addWatch, deleteWatch } from '../../../lib/storage.js'
+import { readWatches, addWatch, updateWatch, deleteWatch } from '../../../lib/storage.js'
 
 export async function GET() {
   try {
@@ -31,6 +31,39 @@ export async function POST(request) {
     })
 
     return NextResponse.json(watch, { status: 201 })
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
+export async function PUT(request) {
+  try {
+    const body = await request.json()
+    const { id, brand, model, reference, maxPrice, notes } = body
+
+    if (!id) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 })
+    }
+    if (!brand || !model || !maxPrice) {
+      return NextResponse.json(
+        { error: 'brand, model, and maxPrice are required' },
+        { status: 400 }
+      )
+    }
+
+    const watch = await updateWatch(id, {
+      brand: brand.trim(),
+      model: model.trim(),
+      reference: reference?.trim() || '',
+      maxPrice: Number(maxPrice),
+      notes: notes?.trim() || '',
+    })
+
+    if (!watch) {
+      return NextResponse.json({ error: 'Watch not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(watch)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

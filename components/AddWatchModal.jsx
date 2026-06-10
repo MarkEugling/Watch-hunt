@@ -1,15 +1,16 @@
 'use client'
 import { useState, useRef } from 'react'
-import { X, Plus, Sparkles } from 'lucide-react'
+import { X, Plus, Check, Sparkles } from 'lucide-react'
 import { lookupReference } from '../lib/references'
 
-export default function AddWatchModal({ onClose, onAdd }) {
+export default function AddWatchModal({ onClose, onAdd, watch }) {
+  const isEdit = !!watch
   const [form, setForm] = useState({
-    brand: '',
-    model: '',
-    reference: '',
-    maxPrice: '',
-    notes: '',
+    brand: watch?.brand || '',
+    model: watch?.model || '',
+    reference: watch?.reference || '',
+    maxPrice: watch?.maxPrice != null ? String(watch.maxPrice) : '',
+    notes: watch?.notes || '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,13 +43,17 @@ export default function AddWatchModal({ onClose, onAdd }) {
     setLoading(true)
     try {
       const res = await fetch('/api/watches', {
-        method: 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, maxPrice: Number(form.maxPrice) }),
+        body: JSON.stringify({
+          ...(isEdit ? { id: watch.id } : {}),
+          ...form,
+          maxPrice: Number(form.maxPrice),
+        }),
       })
-      if (!res.ok) throw new Error('Failed to add watch')
-      const newWatch = await res.json()
-      onAdd(newWatch)
+      if (!res.ok) throw new Error(isEdit ? 'Failed to save changes' : 'Failed to add watch')
+      const saved = await res.json()
+      onAdd(saved)
       onClose()
     } catch (err) {
       setError(err.message)
@@ -70,8 +75,10 @@ export default function AddWatchModal({ onClose, onAdd }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/5">
           <div>
-            <h2 className="text-lg font-semibold text-white">Add Watch</h2>
-            <p className="text-sm text-white/40 mt-0.5">Track a reference across all markets</p>
+            <h2 className="text-lg font-semibold text-white">{isEdit ? 'Edit Watch' : 'Add Watch'}</h2>
+            <p className="text-sm text-white/40 mt-0.5">
+              {isEdit ? 'Update the details of this watch' : 'Track a reference across all markets'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -99,7 +106,7 @@ export default function AddWatchModal({ onClose, onAdd }) {
               className={`w-full bg-surface-2 border rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none transition-colors ${
                 autofilled ? 'border-success/40' : 'border-gold/30 focus:border-gold/60'
               }`}
-              autoFocus
+              autoFocus={!isEdit}
             />
             {autofilled && (
               <p className="mt-1 text-xs text-success">✓ Brand, model & reference filled in below</p>
@@ -226,10 +233,12 @@ export default function AddWatchModal({ onClose, onAdd }) {
             >
               {loading ? (
                 <span className="inline-block w-4 h-4 border-2 border-bg/30 border-t-bg rounded-full animate-spin" />
+              ) : isEdit ? (
+                <Check size={16} />
               ) : (
                 <Plus size={16} />
               )}
-              Add Watch
+              {isEdit ? 'Save Changes' : 'Add Watch'}
             </button>
           </div>
         </form>

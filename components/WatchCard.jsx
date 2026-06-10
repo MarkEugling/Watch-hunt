@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { Search, Trash2, ChevronDown, ChevronUp, Clock, Tag, BookOpen } from 'lucide-react'
+import { Search, Trash2, Pencil, ChevronDown, ChevronUp, Clock, Tag } from 'lucide-react'
 import SearchResults from './SearchResults'
+import AddWatchModal from './AddWatchModal'
 
 function formatPrice(n) {
   return '$' + Number(n).toLocaleString()
@@ -21,6 +22,7 @@ function timeAgo(iso) {
 export default function WatchCard({ watch, onDelete, onUpdate }) {
   const [searching, setSearching] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
   const [localResults, setLocalResults] = useState(watch.results || [])
   const [localStatus, setLocalStatus] = useState(watch.sourceStatus || {})
   const [searchedAt, setSearchedAt] = useState(watch.lastSearched || null)
@@ -49,6 +51,10 @@ export default function WatchCard({ watch, onDelete, onUpdate }) {
     } finally {
       setSearching(false)
     }
+  }
+
+  const handleEdited = (updated) => {
+    onUpdate({ ...watch, ...updated })
   }
 
   return (
@@ -111,7 +117,16 @@ export default function WatchCard({ watch, onDelete, onUpdate }) {
             </button>
 
             <button
+              onClick={() => setShowEdit(true)}
+              title="Edit watch"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-gold/70 hover:bg-gold/10 transition-all"
+            >
+              <Pencil size={13} />
+            </button>
+
+            <button
               onClick={() => onDelete(watch.id)}
+              title="Delete watch"
               className="w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-danger/60 hover:bg-danger/10 transition-all"
             >
               <Trash2 size={13} />
@@ -148,6 +163,15 @@ export default function WatchCard({ watch, onDelete, onUpdate }) {
             maxPrice={watch.maxPrice}
           />
         </div>
+      )}
+
+      {/* Edit modal */}
+      {showEdit && (
+        <AddWatchModal
+          watch={watch}
+          onClose={() => setShowEdit(false)}
+          onAdd={handleEdited}
+        />
       )}
     </div>
   )

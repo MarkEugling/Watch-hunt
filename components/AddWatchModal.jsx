@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Plus, Sparkles } from 'lucide-react'
+import { lookupReference } from '../lib/references'
 
 export default function AddWatchModal({ onClose, onAdd }) {
   const [form, setForm] = useState({
@@ -12,6 +13,24 @@ export default function AddWatchModal({ onClose, onAdd }) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lookup, setLookup] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [autofilled, setAutofilled] = useState(false)
+  const priceRef = useRef(null)
+
+  const handleLookup = (value) => {
+    setLookup(value)
+    setAutofilled(false)
+    setSuggestions(lookupReference(value))
+  }
+
+  const applySuggestion = (s) => {
+    setForm(f => ({ ...f, brand: s.brand, model: s.model, reference: s.ref }))
+    setLookup(`${s.brand} ${s.model} — ${s.ref}`)
+    setSuggestions([])
+    setAutofilled(true)
+    priceRef.current?.focus()
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -64,6 +83,57 @@ export default function AddWatchModal({ onClose, onAdd }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Smart lookup */}
+          <div className="relative">
+            <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1">
+                <Sparkles size={11} className="text-gold" />
+                Smart Lookup
+              </span>
+            </label>
+            <input
+              type="text"
+              placeholder={'Type a reference or nickname — "116610LN", "pepsi", "bb58"…'}
+              value={lookup}
+              onChange={e => handleLookup(e.target.value)}
+              className={`w-full bg-surface-2 border rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none transition-colors ${
+                autofilled ? 'border-success/40' : 'border-gold/30 focus:border-gold/60'
+              }`}
+              autoFocus
+            />
+            {autofilled && (
+              <p className="mt-1 text-xs text-success">✓ Brand, model & reference filled in below</p>
+            )}
+            {suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-surface-2 border border-gold/20 rounded-xl shadow-2xl overflow-hidden">
+                {suggestions.map(s => (
+                  <button
+                    key={s.ref}
+                    type="button"
+                    onClick={() => applySuggestion(s)}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-gold/10 transition-colors border-b border-white/5 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <span className="block text-sm text-white truncate">
+                        {s.brand} <span className="text-white/60">{s.model}</span>
+                      </span>
+                      {s.nicknames.length > 0 && (
+                        <span className="block text-xs text-gold/60">“{s.nicknames[0]}”</span>
+                      )}
+                    </div>
+                    <span className="flex-shrink-0 text-xs font-mono text-white/40">{s.ref}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-xs text-white/25">or enter manually</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">
@@ -111,6 +181,7 @@ export default function AddWatchModal({ onClose, onAdd }) {
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">$</span>
               <input
+                ref={priceRef}
                 type="number"
                 placeholder="25,000"
                 value={form.maxPrice}

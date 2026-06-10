@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag } from 'lucide-react'
+import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star } from 'lucide-react'
+import { computeTrust } from '../lib/trust'
 
 const SOURCE_COLORS = {
   "Sotheby's": 'bg-blue-500/10 text-blue-300 border-blue-500/20',
@@ -11,6 +12,60 @@ const SOURCE_COLORS = {
   'WatchCharts': 'bg-green-500/10 text-green-300 border-green-500/20',
   'WatchPatrol': 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
   'eBay': 'bg-pink-500/10 text-pink-300 border-pink-500/20',
+}
+
+const TRUST_CHIP = {
+  success: 'bg-success/15 text-success border-success/30',
+  gold: 'bg-gold/15 text-gold border-gold/30',
+  warning: 'bg-warning/15 text-warning border-warning/30',
+  danger: 'bg-danger/15 text-danger border-danger/30',
+}
+
+function TrustBadges({ result }) {
+  // Older cached results won't have trust attached — compute on the fly
+  const trust = result.trust || computeTrust(result)
+  if (!trust) return null
+
+  const chip = TRUST_CHIP[trust.tierColor] || TRUST_CHIP.gold
+  const ShieldIcon = trust.score >= 60 ? ShieldCheck : ShieldAlert
+  const seller = result.seller
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+      {/* Trust score chip */}
+      <span
+        title={trust.factors.join(' · ')}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold border ${chip}`}
+      >
+        {trust.score} · {trust.tierLabel}
+      </span>
+
+      {/* Platform guarantee badge */}
+      <span
+        title={trust.guaranteeDetail}
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] border bg-white/5 text-white/50 border-white/10 cursor-help"
+      >
+        <ShieldIcon size={11} className={trust.score >= 60 ? 'text-success/70' : 'text-warning/70'} />
+        {trust.guarantee}
+      </span>
+
+      {/* Seller track record */}
+      {seller && (seller.name || seller.rating != null) && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-white/40">
+          {seller.rating != null && (
+            <>
+              <Star size={10} className="text-gold/70 fill-gold/70" />
+              {Number(seller.rating).toFixed(1)}
+            </>
+          )}
+          {seller.reviewCount != null && (
+            <span>({Number(seller.reviewCount).toLocaleString()})</span>
+          )}
+          {seller.name && <span className="truncate max-w-[120px]">{seller.name}</span>}
+        </span>
+      )}
+    </div>
+  )
 }
 
 function ResultItem({ result }) {
@@ -46,6 +101,7 @@ function ResultItem({ result }) {
             </span>
           )}
         </div>
+        <TrustBadges result={result} />
       </div>
 
       <ExternalLink size={14} className="flex-shrink-0 text-white/20 group-hover:text-gold/60 transition-colors mt-1" />

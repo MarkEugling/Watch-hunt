@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star } from 'lucide-react'
+import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { computeTrust } from '../lib/trust'
 
 const SOURCE_COLORS = {
@@ -21,6 +21,28 @@ const TRUST_CHIP = {
   danger: 'bg-danger/15 text-danger border-danger/30',
 }
 
+function BudgetDelta({ price, maxPrice }) {
+  if (!price || !maxPrice) return null
+  const delta = price - maxPrice
+
+  if (delta <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-success/15 text-success border border-success/30">
+        <TrendingDown size={10} />
+        {delta === 0 ? 'At budget' : `$${Math.abs(delta).toLocaleString()} under`}
+      </span>
+    )
+  }
+
+  const pctOver = Math.round((delta / maxPrice) * 100)
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-danger/15 text-danger border border-danger/30">
+      <TrendingUp size={10} />
+      +${delta.toLocaleString()} over ({pctOver}%)
+    </span>
+  )
+}
+
 function TrustBadges({ result }) {
   // Older cached results won't have trust attached — compute on the fly
   const trust = result.trust || computeTrust(result)
@@ -31,7 +53,7 @@ function TrustBadges({ result }) {
   const seller = result.seller
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+    <>
       {/* Trust score chip */}
       <span
         title={trust.factors.join(' · ')}
@@ -64,11 +86,11 @@ function TrustBadges({ result }) {
           {seller.name && <span className="truncate max-w-[120px]">{seller.name}</span>}
         </span>
       )}
-    </div>
+    </>
   )
 }
 
-function ResultItem({ result }) {
+function ResultItem({ result, maxPrice }) {
   return (
     <a
       href={result.url}
@@ -89,7 +111,7 @@ function ResultItem({ result }) {
           {result.title}
         </p>
         <div className="flex items-center gap-3 mt-1">
-          <span className={result.isLink ? 'text-xs text-white/40' : 'text-xs font-semibold text-gold'}>
+          <span className={result.isLink ? 'text-xs text-white/40' : 'text-sm font-bold text-white'}>
             {result.priceDisplay}
           </span>
           {result.saleName && (
@@ -101,7 +123,10 @@ function ResultItem({ result }) {
             </span>
           )}
         </div>
-        <TrustBadges result={result} />
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <BudgetDelta price={result.price} maxPrice={maxPrice} />
+          <TrustBadges result={result} />
+        </div>
       </div>
 
       <ExternalLink size={14} className="flex-shrink-0 text-white/20 group-hover:text-gold/60 transition-colors mt-1" />
@@ -126,7 +151,7 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
   })
 
   const priceMatches = filtered.filter(r => r.price && r.price <= maxPrice)
-  const linkResults = filtered.filter(r => r.isLink)
+  const overBudget = filtered.filter(r => r.price && r.price > maxPrice)
   const displayed = showAll ? filtered : filtered.slice(0, 8)
 
   return (
@@ -156,9 +181,16 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
       </div>
 
       {/* Summary pill */}
-      {priceMatches.length > 0 && (
-        <div className="mb-3 px-3 py-2 rounded-lg bg-success/10 border border-success/20 text-xs text-success">
-          ✓ {priceMatches.length} listing{priceMatches.length !== 1 ? 's' : ''} found at or below your max price
+      {(priceMatches.length > 0 || overBudget.length > 0) && (
+        <div className={`mb-3 px-3 py-2 rounded-lg border text-xs ${
+          priceMatches.length > 0
+            ? 'bg-success/10 border-success/20 text-success'
+            : 'bg-warning/10 border-warning/20 text-warning'
+        }`}>
+          {priceMatches.length > 0
+            ? `✓ ${priceMatches.length} listing${priceMatches.length !== 1 ? 's' : ''} at or below your budget`
+            : `Closest listing is $${Math.min(...overBudget.map(r => r.price - maxPrice)).toLocaleString()} over budget`}
+          {priceMatches.length > 0 && overBudget.length > 0 && ` · ${overBudget.length} more over budget`}
         </div>
       )}
 
@@ -193,7 +225,7 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
       ) : (
         <div className="space-y-2">
           {displayed.map((result, i) => (
-            <ResultItem key={i} result={result} />
+            <ResultItem key={i} result={result} maxPrice={maxPrice} />
           ))}
         </div>
       )}

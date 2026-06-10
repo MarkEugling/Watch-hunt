@@ -36,3 +36,4 @@ next-env.d.ts
 
 push-to-github.ps1
 setup-github.bat
+.env*.local

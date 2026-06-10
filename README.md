@@ -59,3 +59,16 @@ For Vercel deployment, swap the JSON file storage for a database (Vercel KV or P
 - Next.js 14 (App Router)
 - Tailwind CSS
 - Local JSON file storage
+
+## eBay API (real listings)
+
+Without credentials, eBay results are search links. To get real listings
+(exact item, price, seller feedback) inline:
+
+1. Create a free developer account at https://developer.ebay.com
+2. Create an app keyset (production) — you need the **App ID (Client ID)**
+   and **Cert ID (Client Secret)**
+3. Set environment variables:
+   - Locally: create `.env.local` with
+     `EBAY_CLIENT_ID=...` and `EBAY_CLIENT_SECRET=...`
+   - Vercel: Project Settings → Environment Variables, add both, redeploy

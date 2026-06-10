@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { ExternalLink, ChevronDown, ChevronUp, Gavel, ShoppingBag, ShieldCheck, ShieldAlert, Star, TrendingDown, TrendingUp, SearchCheck } from 'lucide-react'
 import { computeTrust } from '../lib/trust'
 
 const SOURCE_COLORS = {
@@ -51,6 +51,7 @@ function TrustBadges({ result }) {
   const chip = TRUST_CHIP[trust.tierColor] || TRUST_CHIP.gold
   const ShieldIcon = trust.score >= 60 ? ShieldCheck : ShieldAlert
   const seller = result.seller
+  const isPercentRating = seller?.rating != null && (seller.ratingMax === 100 || seller.rating > 5)
 
   return (
     <>
@@ -77,7 +78,7 @@ function TrustBadges({ result }) {
           {seller.rating != null && (
             <>
               <Star size={10} className="text-gold/70 fill-gold/70" />
-              {Number(seller.rating).toFixed(1)}
+              {isPercentRating ? `${Number(seller.rating).toFixed(1)}%` : Number(seller.rating).toFixed(1)}
             </>
           )}
           {seller.reviewCount != null && (
@@ -98,8 +99,16 @@ function ResultItem({ result, maxPrice }) {
       rel="noopener noreferrer"
       className="flex items-start gap-3 p-3 rounded-xl bg-surface-3 hover:bg-surface-2 border border-white/5 hover:border-gold/20 transition-all group"
     >
-      {/* Source badge */}
-      <div className="flex-shrink-0 mt-0.5">
+      {/* Thumbnail or source badge */}
+      <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-1.5">
+        {result.imageUrl && (
+          <img
+            src={result.imageUrl}
+            alt=""
+            className="w-12 h-12 rounded-lg object-cover border border-white/10"
+            loading="lazy"
+          />
+        )}
         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${SOURCE_COLORS[result.source] || 'bg-white/5 text-white/50 border-white/10'}`}>
           {result.sourceType === 'auction' ? <Gavel size={10} className="mr-1" /> : <ShoppingBag size={10} className="mr-1" />}
           {result.source}
@@ -107,19 +116,22 @@ function ResultItem({ result, maxPrice }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-white/90 font-medium leading-tight truncate group-hover:text-white">
+        <p className="text-sm text-white/90 font-medium leading-tight group-hover:text-white">
           {result.title}
         </p>
-        <div className="flex items-center gap-3 mt-1">
-          <span className={result.isLink ? 'text-xs text-white/40' : 'text-sm font-bold text-white'}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+          <span className={result.isLink ? 'text-xs text-white/40' : 'text-base font-bold text-white'}>
             {result.priceDisplay}
           </span>
           {result.saleName && (
             <span className="text-xs text-white/30">{result.saleName}</span>
           )}
+          {result.condition && (
+            <span className="text-xs text-white/30">{result.condition}</span>
+          )}
           {result.saleDate && (
             <span className="text-xs text-white/30">
-              {new Date(result.saleDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              ends {new Date(result.saleDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           )}
         </div>
@@ -127,6 +139,12 @@ function ResultItem({ result, maxPrice }) {
           <BudgetDelta price={result.price} maxPrice={maxPrice} />
           <TrustBadges result={result} />
         </div>
+        {result.matchedQuery && !result.isLink && (
+          <p className="mt-1 text-[11px] text-white/25 inline-flex items-center gap-1">
+            <SearchCheck size={10} />
+            matched search “{result.matchedQuery}”
+          </p>
+        )}
       </div>
 
       <ExternalLink size={14} className="flex-shrink-0 text-white/20 group-hover:text-gold/60 transition-colors mt-1" />
@@ -137,6 +155,7 @@ function ResultItem({ result, maxPrice }) {
 export default function SearchResults({ results, sourceStatus, searchedAt, maxPrice }) {
   const [tab, setTab] = useState('all')
   const [showAll, setShowAll] = useState(false)
+  const [showLinks, setShowLinks] = useState(false)
 
   const TABS = [
     { id: 'all', label: 'All' },
@@ -150,9 +169,13 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
     return true
   })
 
-  const priceMatches = filtered.filter(r => r.price && r.price <= maxPrice)
-  const overBudget = filtered.filter(r => r.price && r.price > maxPrice)
-  const displayed = showAll ? filtered : filtered.slice(0, 8)
+  // Real listings vs generic search shortcuts
+  const hits = filtered.filter(r => !r.isLink)
+  const links = filtered.filter(r => r.isLink)
+
+  const priceMatches = hits.filter(r => r.price && r.price <= maxPrice)
+  const overBudget = hits.filter(r => r.price && r.price > maxPrice)
+  const displayedHits = showAll ? hits : hits.slice(0, 8)
 
   return (
     <div className="mt-4 animate-fade-in">
@@ -217,26 +240,48 @@ export default function SearchResults({ results, sourceStatus, searchedAt, maxPr
         ))}
       </div>
 
-      {/* Results list */}
-      {displayed.length === 0 ? (
-        <div className="text-center py-8 text-white/25 text-sm">
-          No results found at this price point
+      {/* Real listings */}
+      {hits.length === 0 ? (
+        <div className="text-center py-6 text-white/25 text-sm">
+          No parsed listings — use the market searches below
         </div>
       ) : (
         <div className="space-y-2">
-          {displayed.map((result, i) => (
+          {displayedHits.map((result, i) => (
             <ResultItem key={i} result={result} maxPrice={maxPrice} />
           ))}
         </div>
       )}
 
-      {filtered.length > 8 && (
+      {hits.length > 8 && (
         <button
           onClick={() => setShowAll(!showAll)}
           className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 text-xs text-white/40 hover:text-white/70 transition-colors"
         >
-          {showAll ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Show all {filtered.length} results</>}
+          {showAll ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Show all {hits.length} listings</>}
         </button>
+      )}
+
+      {/* Search shortcuts — collapsed by default */}
+      {links.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowLinks(!showLinks)}
+            className="w-full flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"
+          >
+            <div className="flex-1 h-px bg-white/5" />
+            {showLinks ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            Search the markets directly ({links.length})
+            <div className="flex-1 h-px bg-white/5" />
+          </button>
+          {showLinks && (
+            <div className="space-y-2 mt-3">
+              {links.map((result, i) => (
+                <ResultItem key={i} result={result} maxPrice={maxPrice} />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

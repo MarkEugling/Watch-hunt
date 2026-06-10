@@ -134,10 +134,10 @@ export default function Home() {
               <div className="text-xs text-white/40 mt-0.5 uppercase tracking-wider">Active matches</div>
             </div>
             <div className="bg-surface rounded-xl p-4 border border-white/5 group relative cursor-default">
-              <div className="text-2xl font-bold text-white">8</div>
+              <div className="text-2xl font-bold text-white">7</div>
               <div className="text-xs text-white/40 mt-0.5 uppercase tracking-wider">Markets monitored</div>
               <div className="absolute top-full left-0 mt-2 hidden group-hover:flex flex-col gap-1 bg-surface-2 border border-white/10 rounded-xl p-3 z-10 w-40 shadow-xl">
-                {["Sotheby's","Christie's","Phillips","Antiquorum","Chrono24","WatchCharts","WatchPatrol","eBay"].map(m => (
+                {["Sotheby's","Christie's","Phillips","Antiquorum","Chrono24","WatchCharts","WatchPatrol"].map(m => (
                   <span key={m} className="text-xs text-white/60">{m}</span>
                 ))}
               </div>
@@ -195,10 +195,10 @@ function EmptyState({ onAdd }) {
       </div>
       <h2 className="text-xl font-semibold text-white mb-2">Your watchlist is empty</h2>
       <p className="text-white/35 text-sm max-w-sm mb-8 leading-relaxed">
-        Add a watch reference and your max price. Every morning, Watch Hunt scans 8 markets and alerts you when it appears at or below your threshold.
+        Add a watch reference and your max price. Every morning, Watch Hunt scans 7 markets and alerts you when it appears at or below your threshold.
       </p>
       <div className="flex flex-col gap-2 text-xs text-white/20 mb-8">
-        {["Sotheby's", "Christie's", "Phillips", "Antiquorum", "Chrono24", "WatchCharts", "WatchPatrol", "eBay"].map(src => (
+        {["Sotheby's", "Christie's", "Phillips", "Antiquorum", "Chrono24", "WatchCharts", "WatchPatrol"].map(src => (
           <span key={src}>{src}</span>
         ))}
       </div>
